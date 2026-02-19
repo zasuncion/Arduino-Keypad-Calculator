@@ -1,90 +1,153 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include  <Keypad.h>
 
 //OLED Info
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+// Button Pins
+const int zero = 10;
+const int one = 9;
+const int add = 7;
+const int sub = 6;
+const int mult = 5;
+const int dvd = 4;
+const int eql = 2;
+const int clr = 3;
 
-const  byte ROWS = 1; // one rows
-const byte COLS = 1; // one columns
-byte rowPins[ROWS] = {11};
-byte colPins[COLS] = {3};
+// Internal Variables for calculations
+long Num1 = 0;
+long Num2 = 0;
+long Value = 0; //Used to store inputted values and the output
 
-// Define  the Keymap
-char keys[ROWS][COLS] = {
+char action;
+bool result = false;
 
-  {'0'}
+void appendDigit(int digit) {
+  Value = Value * 10 + digit;
+}
 
-};
+void calculateResult() {
+  switch(action) {
+    case '+': 
+      Value = Num1 + Num2;
+      break;
+    case '-': 
+      Value = Num1 - Num2; 
+      break;
+    case '*': 
+      Value = Num1 * Num2; 
+      break;
+    case '/': 
+      if (Num2 != 0){
+        Value = Num1 / Num2;
+      }
+      else{
+        Value = 0;
+      }
+      break;
+  }
+}
 
-Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS  ); //  Create the Keypad
+void displayResult(){
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.setTextSize(2);
+
+  display.print(Num1); //could probably use concatenation but it seemed like typecasting isn't a good idea here
+  display.print(action);
+  display.print(Num2);
+
+  if(result){
+    display.print("=");
+    display.print(Value);
+  }
+
+  display.display();
+}
 
 void setup(){
-  pinMode(11, INPUT);
-  pinMode(3, INPUT);
-
 
   Serial.begin(9600);
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-
-  //set the column to always be high
-  digitalWrite(3,HIGH);
-
-
-  // Wait for display
-  delay(500);
-
-  // Show initial display buffer contents on the screen --
-  // the library initializes this with an Adafruit splash screen.
-  display.display();
-  delay(2000); // Pause for 2 seconds
-
-  Serial.print("fhuihgei");
-
-  // Clear the buffer
   display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
 
-  display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-  display.setCursor(0,0); 
+  pinMode(zero, INPUT_PULLUP);
+  pinMode(one, INPUT_PULLUP);
+  pinMode(add, INPUT_PULLUP);
+  pinMode(sub, INPUT_PULLUP);
+  pinMode(mult, INPUT_PULLUP);
+  pinMode(dvd, INPUT_PULLUP);
+  pinMode(eql, INPUT_PULLUP);
+  pinMode(clr, INPUT_PULLUP);
 
+  display.setTextSize(1);
+  display.setCursor(0,0);
 
   display.println(F("hello"));
   display.display();
+
+  delay(1500);
 }
-
-char key;
-
-int buttonState;
 
 void loop(){
-  key = kpd.getKey();  //storing pressed key value in a char
 
-  buttonState = digitalRead(11);
-  if(buttonState == HIGH){
-    Serial.print("yippee");
-  }
-  else{
-    Serial.print("oh no");
+   // delete
+  if(digitalRead(clr) == LOW){
+    Num1 = Num2 = Value = 0;
+    result = false;
+    action = 0;
+    delay(200);
   }
 
-  if(key!=NO_KEY){
-    display_result();
+  // update digits
+  if(digitalRead(zero) == LOW){ appendDigit(0); delay(200); }
+  if(digitalRead(one) == LOW){ appendDigit(1); delay(200); }
+
+  // detect operation
+  if(digitalRead(add) == LOW){
+    Num1 = Value;
+    Value = 0;
+    action = '+';
+    delay(200);
   }
+
+  if(digitalRead(sub) == LOW){
+    Num1 = Value;
+    Value = 0;
+    action = '-';
+    delay(200);
+  }
+
+  if(digitalRead(mult) == LOW){
+    Num1 = Value;
+    Value = 0;
+    action = '*';
+    delay(200);
+  }
+
+  if(digitalRead(dvd) == LOW){
+    Num1 = Value;
+    Value = 0;
+    action = '/';
+    delay(200);
+  }
+
+  // For Result
+  if(digitalRead(eql) == LOW){
+    Num2 = Value;
+    result = true;
+    calculateResult();
+    delay(200);
+  }
+
+  displayResult();
 }
-
-void display_result(){
-  // Draw a single pixel in white
-  //display.drawPixel(10, 10, SSD1306_WHITE);
-  display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-  display.setCursor(0,0); 
-
 
   display.println(F("yippee! (:"));
   display.display();
