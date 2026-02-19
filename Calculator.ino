@@ -1,196 +1,91 @@
-*
- * Arduino Keypad calculator Program
- */
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include  <Keypad.h>
 
-#include <LiquidCrystal.h>  //Header file for LCD from https://www.arduino.cc/en/Reference/LiquidCrystal
-#include  <Keypad.h> //Header file for Keypad from https://github.com/Chris--A/Keypad
+//OLED Info
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-const  byte ROWS = 4; // Four rows
-const byte COLS = 4; // Three columns
+
+const  byte ROWS = 1; // one rows
+const byte COLS = 1; // one columns
+byte rowPins[ROWS] = {11};
+byte colPins[COLS] = {3};
 
 // Define  the Keymap
 char keys[ROWS][COLS] = {
 
-  {'7','8','9','D'},
-
-  {'4','5','6','C'},
-
-  {'1','2','3','B'},
-
-  {'*','0','#','A'}
+  {'0'}
 
 };
 
-byte rowPins[ROWS]  = { 0, 1, 2, 3 };// Connect keypad ROW0, ROW1, ROW2 and ROW3 to these Arduino pins.
-byte  colPins[COLS] = { 4, 5, 6, 7 }; // Connect keypad COL0, COL1 and COL2 to these Arduino  pins.
-
 Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS  ); //  Create the Keypad
 
-const int rs = 8, en = 9, d4 = 10, d5 = 11, d6 =  12, d7 = 13; //Pins to which LCD is connected
-LiquidCrystal lcd(rs, en, d4, d5,  d6, d7);
+void setup(){
+  pinMode(11, INPUT);
+  pinMode(3, INPUT);
 
- long Num1,Num2,Number;
- char key,action;
- boolean result  = false;
- 
-void setup() {
-  lcd.begin(16, 2); //We are using a 16*2 LCD  display
-  lcd.print("DIY Calculator"); //Display a intro message
-  lcd.setCursor(0,  1);   // set the cursor to column 0, line 1
-  lcd.print("-CircuitDigest");  //Display a intro message 
 
-   delay(2000); //Wait for display to show info
-    lcd.clear(); //Then clean it
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+
+  //set the column to always be high
+  digitalWrite(3,HIGH);
+
+
+  // Wait for display
+  delay(500);
+
+  // Show initial display buffer contents on the screen --
+  // the library initializes this with an Adafruit splash screen.
+  display.display();
+  delay(2000); // Pause for 2 seconds
+
+  Serial.print("fhuihgei");
+
+  // Clear the buffer
+  display.clearDisplay();
+
+  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0); 
+
+
+  display.println(F("hello"));
+  display.display();
 }
 
-void loop() {
-  
-key = kpd.getKey();  //storing pressed key value in a char
+char key;
 
-if (key!=NO_KEY)
-DetectButtons();
+int buttonState;
 
-if  (result==true)
-CalculateResult();
+void loop(){
+  key = kpd.getKey();  //storing pressed key value in a char
 
-DisplayResult();   
-}
-
-void  DetectButtons()
-{ 
-     lcd.clear(); //Then clean it
-    if (key=='*')  //If cancel Button is pressed
-    {Serial.println ("Button Cancel"); Number=Num1=Num2=0;  result=false;}
-    
-     if (key == '1') //If Button 1 is pressed
-    {Serial.println  ("Button 1"); 
-    if (Number==0)
-    Number=1;
-    else
-    Number  = (Number*10) + 1; //Pressed twice
-    }
-    
-     if (key == '4') //If  Button 4 is pressed
-    {Serial.println ("Button 4"); 
-    if (Number==0)
-    Number=4;
-    else
-    Number = (Number*10) + 4; //Pressed twice
-    }
-    
-     if (key == '7') //If Button 7 is pressed
-    {Serial.println ("Button  7");
-    if (Number==0)
-    Number=7;
-    else
-    Number = (Number*10)  + 7; //Pressed twice
-    } 
-  
-
-    if (key == '0')
-    {Serial.println  ("Button 0"); //Button 0 is Pressed
-    if (Number==0)
-    Number=0;
-    else
-    Number = (Number*10) + 0; //Pressed twice
-    }
-    
-     if  (key == '2') //Button 2 is Pressed
-    {Serial.println ("Button 2"); 
-     if  (Number==0)
-    Number=2;
-    else
-    Number = (Number*10) + 2; //Pressed  twice
-    }
-    
-     if (key == '5')
-    {Serial.println ("Button  5"); 
-     if (Number==0)
-    Number=5;
-    else
-    Number = (Number*10)  + 5; //Pressed twice
-    }
-    
-     if (key == '8')
-    {Serial.println  ("Button 8"); 
-     if (Number==0)
-    Number=8;
-    else
-    Number  = (Number*10) + 8; //Pressed twice
-    }   
-  
-
-    if (key == '#')
-    {Serial.println ("Button Equal"); 
-    Num2=Number;
-    result = true;
-    }
-    
-     if (key == '3')
-    {Serial.println ("Button 3"); 
-     if (Number==0)
-    Number=3;
-    else
-    Number = (Number*10) + 3;  //Pressed twice
-    }
-    
-     if (key == '6')
-    {Serial.println  ("Button 6"); 
-    if (Number==0)
-    Number=6;
-    else
-    Number  = (Number*10) + 6; //Pressed twice
-    }
-    
-     if (key == '9')
-    {Serial.println ("Button 9");
-    if (Number==0)
-    Number=9;
-    else
-    Number = (Number*10) + 9; //Pressed twice
-    }  
-
-      if (key ==  'A' || key == 'B' || key == 'C' || key == 'D') //Detecting Buttons on Column 4
-  {
-    Num1 = Number;    
-    Number =0;
-    if (key == 'A')
-    {Serial.println  ("Addition"); action = '+';}
-     if (key == 'B')
-    {Serial.println ("Subtraction");  action = '-'; }
-     if (key == 'C')
-    {Serial.println ("Multiplication");  action = '*';}
-     if (key == 'D')
-    {Serial.println ("Devesion"); action  = '/';}  
-
-    delay(100);
+  buttonState = digitalRead(11);
+  if(buttonState == HIGH){
+    Serial.print("yippee");
   }
-  
+  else{
+    Serial.print("oh no");
+  }
+
+  if(key!=NO_KEY){
+    display_result();
+  }
 }
 
-void CalculateResult()
-{
-  if (action=='+')
-    Number = Num1+Num2;
+void display_result(){
+  // Draw a single pixel in white
+  //display.drawPixel(10, 10, SSD1306_WHITE);
+  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0); 
 
-  if (action=='-')
-    Number  = Num1-Num2;
 
-  if (action=='*')
-    Number = Num1*Num2;
-
-  if (action=='/')
-    Number = Num1/Num2; 
-}
-
-void DisplayResult()
-{
-  lcd.setCursor(0,  0);   // set the cursor to column 0, line 1
-  lcd.print(Num1); lcd.print(action);  lcd.print(Num2); 
-  
-  if (result==true)
-  {lcd.print(" ="); lcd.print(Number);}  //Display the result
-  
-  lcd.setCursor(0, 1);   // set the cursor to column  0, line 1
-  lcd.print(Number); //Display the result
+  display.println(F("yippee! (:"));
+  display.display();
 }
